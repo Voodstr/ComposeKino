@@ -3,15 +3,19 @@ package ru.voodster.composekino
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.runtime.Composable
@@ -25,7 +29,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,12 +42,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeKinoTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MainContent()
+                    Greeting("Player")
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                    )
+                    PieScroll()
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                    )
                 }
             }
         }
@@ -57,80 +70,88 @@ fun Greeting(name: String) {
 }
 
 @Composable
-fun PieScroll(){
-    val isEnabled = remember { mutableStateOf(true) }
-    val isRotated = remember { mutableStateOf(false) }
+fun PieScroll() {
+    val animationAngle = remember { mutableStateOf(0F) }
 
     val angle: Float by animateFloatAsState(
-        targetValue = if (isRotated.value) 360F else 0F,
+        targetValue = animationAngle.value,
         animationSpec = tween(
             durationMillis = 2000, // duration
-            easing = FastOutSlowInEasing
-        ),
-        finishedListener = {
-            // disable the button
-            isEnabled.value = true
-        }
+            easing = LinearOutSlowInEasing
+        )
     )
-    val pieces= listOf("1","2","3","4","5","6")
-    Canvas(modifier = Modifier.size(300.dp).rotate(angle).pointerInput { detectDragGestures { change, dragAmount ->  angle = dragAmount.getDistance()} }, onDraw = {
-        drawCircle(color = Color.Red)
-        endsOfPieCuts(size.height,pieces.size).forEach {
-            println(it.toString())
-            drawLine(
-                Color.Black,
-                start = size.center,
-                end = it,
-                strokeWidth = 10f,
-                cap = StrokeCap.Round
+    Box(
+        modifier = Modifier
+            .size(300.dp)
+            .rotate(angle)
+            .draggable(
+                state = rememberDraggableState {
+                    animationAngle.value += it
+                }, orientation = Orientation.Horizontal
             )
+    ) {
+        val pieces = listOf("1", "2", "3", "4", "5", "6")
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(color = Color.Red)
+            endsOfPieCuts(size.height, pieces.size).forEach {
+                println(it.toString())
+                drawLine(
+                    Color.Black,
+                    start = size.center,
+                    end = it,
+                    strokeWidth = 10f,
+                    cap = StrokeCap.Round
+                )
+            }
         }
+    }
 
-    })
 }
 
-fun endsOfPieCuts(sizeOfPie:Float,pieces:Int):Array<Offset>{
-    val radOfPie = sizeOfPie/2
-    return Array(pieces){
+fun endsOfPieCuts(sizeOfPie: Float, pieces: Int): Array<Offset> {
+    val radOfPie = sizeOfPie / 2
+    return Array(pieces) {
         Offset(
-            x = (radOfPie*cos(2*PI*it/pieces)).toFloat().plus(radOfPie),
-            y = (radOfPie*sin(2*PI*it/pieces)).toFloat().plus(radOfPie)
+            x = (radOfPie * cos(2 * PI * it / pieces)).toFloat().times(0.9f).plus(radOfPie),
+            y = (radOfPie * sin(2 * PI * it / pieces)).toFloat().times(0.9f).plus(radOfPie)
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
+fun PieScrollPreview() {
     ComposeKinoTheme {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Greeting("Player")
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp))
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+            )
             PieScroll()
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp))
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+            )
         }
     }
 }
 
 @Composable
-fun MainContent(){
-    val isEnabled = remember { mutableStateOf(true) }
-    val isRotated = remember { mutableStateOf(false) }
+fun MainContent() {
+    val animationAngle = remember { mutableStateOf(0F) }
 
     val angle: Float by animateFloatAsState(
-        targetValue = if (isRotated.value) 360F else 0F,
+        targetValue = animationAngle.value,
         animationSpec = tween(
             durationMillis = 2000, // duration
-            easing = FastOutSlowInEasing
-        ),
-        finishedListener = {
-            // disable the button
-            isEnabled.value = true
-        }
+            easing = LinearOutSlowInEasing
+        )
     )
 
     Column(
@@ -143,13 +164,11 @@ fun MainContent(){
     ) {
         Button(
             onClick = {
-                isRotated.value = !isRotated.value
-                isEnabled.value = false
+                animationAngle.value += 30F
             },
             colors = ButtonDefaults.buttonColors(
                 Color(0xFF4B0082), Color(0xCCFFFFFF)
-            ),
-            enabled = isEnabled.value
+            )
         ) {
             Text(
                 text = "Rotate Icon",
@@ -171,6 +190,6 @@ fun MainContent(){
 
 @Preview
 @Composable
-fun RotatePreview(){
+fun RotatePreview() {
     MainContent()
 }
